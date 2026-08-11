@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>freebuff-router</title>
+<style>
+  :root {
+    --bg: #f2efe9; --panel: #ffffff; --panel2: #ffe600; --border: #0a0a0a;
+    --text: #0a0a0a; --muted: #555; --accent: #0a0a0a; --accent2: #0a0a0a;
+    --danger: #d40000; --warn: #c47f00; --blue: #0047ff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Courier New", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 14px; }
+  a { color: var(--blue); text-decoration: none; }
+  header { display: flex; align-items: center; gap: 16px; padding: 16px 22px;
+    background: var(--panel); border-bottom: 4px solid var(--border); }
+  header .logo { font-weight: 700; font-size: 18px; letter-spacing: .3px;
+    text-transform: uppercase; }
+  header .logo span { color: var(--accent); background: var(--panel2);
+    padding: 0 4px; }
+  header .ver { color: var(--muted); font-size: 12px; }
+  header .spacer { flex: 1; }
+  header .status { font-size: 12px; color: var(--muted); }
+  header button { background: var(--panel); border: 3px solid var(--border);
+    color: var(--text); padding: 6px 12px; border-radius: 0; cursor: pointer;
+    font-family: inherit; font-weight: 700; text-transform: uppercase; font-size: 12px; }
+  header button:hover { background: var(--panel2); box-shadow: 3px 3px 0 var(--border); }
+  nav { display: flex; gap: 0; padding: 12px 22px; background: var(--panel);
+    border-bottom: 4px solid var(--border); flex-wrap: wrap; }
+  nav button { background: transparent; border: 3px solid transparent;
+    color: var(--text); padding: 8px 14px; border-radius: 0; cursor: pointer;
+    font-size: 13px; font-family: inherit; font-weight: 700; text-transform: uppercase; }
+  nav button.active { background: var(--panel2); border-color: var(--border);
+    box-shadow: 4px 4px 0 var(--border); }
+  nav button:hover { background: var(--panel2); border-color: var(--border); }
+  main { padding: 24px; max-width: 1200px; margin: 0 auto; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px; margin-bottom: 24px; }
+  .card { background: var(--panel); border: 3px solid var(--border);
+    border-radius: 0; padding: 14px; box-shadow: 5px 5px 0 var(--border); }
+  .card:nth-child(1) { background: #ffe600; }
+  .card:nth-child(2) { background: #a4ff3e; }
+  .card:nth-child(3) { background: #ff6a9c; }
+  .card:nth-child(4) { background: #7ec8ff; }
+  .card .label { color: var(--text); font-size: 11px; text-transform: uppercase;
+    letter-spacing: 1px; font-weight: 700; }
+  .card .value { font-size: 28px; font-weight: 700; margin-top: 6px;
+    text-transform: uppercase; }
+  .card .sub { color: var(--text); font-size: 12px; margin-top: 4px; font-weight: 700; }
+  .panel { background: var(--panel); border: 3px solid var(--border);
+    border-radius: 0; padding: 18px; margin-bottom: 20px; box-shadow: 5px 5px 0 var(--border); }
+  .panel h2 { margin: 0 0 14px; font-size: 15px; text-transform: uppercase;
+    letter-spacing: 1px; border-bottom: 3px solid var(--border); padding-bottom: 8px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  button.btn { background: var(--accent); border: 3px solid var(--border);
+    color: #fff; padding: 8px 14px; border-radius: 0; cursor: pointer;
+    font-size: 13px; font-family: inherit; font-weight: 700; text-transform: uppercase;
+    box-shadow: 3px 3px 0 var(--border); }
+  button.btn:hover { box-shadow: 1px 1px 0 var(--border); transform: translate(2px, 2px); }
+  button.btn:active { box-shadow: none; transform: translate(3px, 3px); }
+  button.btn.sec { background: var(--panel); color: var(--text); }
+  button.btn.danger { background: var(--danger); color: #fff; }
+  button.btn.danger:hover { background: #fff; color: var(--danger); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 2px solid var(--border); }
+  tr:hover td { background: #f2f2f2; }
+  th { color: var(--text); font-weight: 700; font-size: 12px; text-transform: uppercase;
+    background: var(--panel2); letter-spacing: 1px; }
+  td.mono, .mono { font-family: "Courier New", ui-monospace, Menlo, monospace; font-size: 12px; }
+  .badge { display: inline-block; padding: 3px 8px; border-radius: 0;
+    font-size: 11px; font-weight: 700; border: 2px solid var(--border);
+    text-transform: uppercase; }
+  .badge.active { background: #a4ff3e; color: var(--text); }
+  .badge.disabled { background: #ff6a6a; color: var(--text); }
+  .badge.cooldown { background: #ffd24a; color: var(--text); }
+  .badge.admin { background: #c9a4ff; color: var(--text); }
+  .badge.inference { background: #7ec8ff; color: var(--text); }
+  .empty { color: var(--muted); text-align: center; padding: 30px; }
+  /* modal */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.65);
+    display: none; align-items: center; justify-content: center; z-index: 100; }
+  .modal-bg.show { display: flex; }
+  .modal { background: var(--panel); border: 4px solid var(--border);
+    border-radius: 0; padding: 24px; width: 480px; max-width: 92vw; max-height: 88vh;
+    overflow: auto; box-shadow: 8px 8px 0 var(--border); }
+  .modal h3 { margin: 0 0 16px; font-size: 16px; text-transform: uppercase;
+    border-bottom: 3px solid var(--border); padding-bottom: 8px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; color: var(--text); font-size: 12px;
+    margin-bottom: 5px; font-weight: 700; text-transform: uppercase; }
+  .field input, .field textarea, .field select { width: 100%; background: #fff;
+    border: 3px solid var(--border); color: var(--text); padding: 9px 11px;
+    border-radius: 0; font-size: 13px; font-family: inherit; }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    outline: none; background: #fffbe6; box-shadow: 3px 3px 0 var(--border); }
+  .field textarea { min-height: 110px; resize: vertical; font-family: "Courier New", monospace; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+  .seg { display: inline-flex; border: 3px solid var(--border); border-radius: 0; overflow: hidden; }
+  .seg button { background: #fff; border: none; color: var(--text); padding: 7px 14px;
+    cursor: pointer; font-size: 12px; font-family: inherit; font-weight: 700; }
+  .seg button.active { background: var(--panel2); color: var(--text); }
+  #toast { position: fixed; bottom: 22px; right: 22px; z-index: 200;
+    display: flex; flex-direction: column; gap: 10px; }
+  .toast { background: var(--panel); border: 3px solid var(--border);
+    border-left: 8px solid var(--accent2); padding: 11px 16px; border-radius: 0;
+    min-width: 220px; box-shadow: 5px 5px 0 var(--border); font-weight: 700; }
+  .toast.err { border-left-color: var(--danger); background: #ffe3e3; }
+  pre.detail { background: #fff; border: 3px solid var(--border);
+    border-radius: 0; padding: 12px; overflow: auto; max-height: 320px;
+    font-size: 12px; font-family: "Courier New", monospace; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">freebuff<span>-router</span></div>
+  <div class="ver" id="verLabel">v—</div>
+  <div class="spacer"></div>
+  <div class="status" id="statusLabel">—</div>
+  <button onclick="logout()">Logout</button>
+</header>
+<nav>
+  <button data-tab="overview" class="active" onclick="switchTab('overview')">Overview</button>
+  <button data-tab="accounts" onclick="switchTab('accounts')">Freebuff Accounts</button>
+  <button data-tab="proxies" onclick="switchTab('proxies')">Proxies</button>
+  <button data-tab="keys" onclick="switchTab('keys')">API Keys</button>
+  <button data-tab="history" onclick="switchTab('history')">History</button>
+  <button data-tab="settings" onclick="switchTab('settings')">Settings</button>
+</nav>
+<main>
+  <!-- OVERVIEW -->
+  <section id="tab-overview">
+    <div class="cards" id="overviewCards"></div>
+    <div class="panel">
+      <h2>Freebuff circuit</h2>
+      <div id="circuitInfo" class="mono"></div>
+    </div>
+  </section>
+
+  <!-- PROXIES -->
+  <section id="tab-proxies" style="display:none">
+    <div class="panel">
+      <div class="toolbar">
+        <button class="btn" onclick="openAddProxy()">+ Add Proxy</button>
+        <button class="btn sec" onclick="openBulkProxyImport()">Bulk Import</button>
+        <button class="btn danger" onclick="bulkDeleteProxies()">Delete Selected</button>
+        <button class="btn sec" onclick="toggleAllProxySelection(true)">Select All</button>
+        <button class="btn sec" onclick="toggleAllProxySelection(false)">Clear Selection</button>
+        <button class="btn sec" onclick="loadProxies()">Refresh</button>
+      </div>
+      <table>
+        <thead><tr><th><input type="checkbox" id="proxySelectAll" onchange="toggleAllProxySelection(this.checked)"></th><th>Label</th><th>Address</th><th>Scope</th><th>Failures</th><th>Status</th><th></th></tr></thead>
+        <tbody id="proxiesBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ACCOUNTS -->
+  <section id="tab-accounts" style="display:none">
+    <div class="panel">
+      <div class="toolbar">
+        <button class="btn" onclick="openAddToken()">+ Add Token</button>
+        <button class="btn sec" onclick="openBulkImport()">Bulk Import</button>
+        <button class="btn sec" onclick="openAddOAuth()">+ Add OAuth</button>
+        <button class="btn sec" onclick="syncQuota()">Sync Quota</button>
+        <button class="btn sec" onclick="loadAccounts()">Refresh</button>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Token</th><th>Email</th><th>Status</th><th>Quota</th><th>Resets</th><th></th>
+        </tr></thead>
+        <tbody id="accountsBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- KEYS -->
+  <section id="tab-keys" style="display:none">
+    <div class="panel">
+      <div class="toolbar">
+        <button class="btn" onclick="openCreateKey()">+ Create Key</button>
+        <button class="btn sec" onclick="loadKeys()">Refresh</button>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Key</th><th>Name</th><th>Models</th><th>RPM</th>
+          <th>Tokens</th><th>Reqs</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody id="keysBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="tab-history" style="display:none">
+    <div class="cards" id="historyCards"></div>
+    <div class="panel">
+      <div class="toolbar">
+        <button class="btn sec" onclick="loadHistory()">Refresh</button>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Time</th><th>Model</th><th>Status</th><th>Latency</th>
+          <th>Tokens</th><th>Account</th><th></th>
+        </tr></thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="tab-settings" style="display:none">
+    <div class="panel" style="max-width:520px">
+      <h2>Dashboard Password</h2>
+      <p style="color:var(--muted);font-size:13px;margin-top:0">
+        Change the password used to sign in to this dashboard. The default is
+        <code>123456</code>.
+      </p>
+      <div class="field">
+        <label>New password</label>
+        <input id="set_password" type="password" placeholder="At least 4 characters">
+      </div>
+      <div class="field">
+        <label>Confirm new password</label>
+        <input id="set_password2" type="password" placeholder="Repeat new password"
+          onkeydown="if(event.key==='Enter')savePassword()">
+      </div>
+      <button class="btn" onclick="savePassword()">Save Password</button>
+    </div>
+  </section>
+</main>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modalBox"></div></div>
+<div id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let CURRENT_TAB = 'overview';
+
+function toast(msg, err) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (err ? ' err' : '');
+  el.textContent = msg;
+  $('toast').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+async function api(path, opts) {
+  opts = opts || {};
+  opts.headers = Object.assign({'Content-Type': 'application/json'}, opts.headers || {});
+  const r = await fetch(path, opts);
+  if (r.status === 401 || r.status === 403) {
+    if (r.status === 401) { window.location = '/login'; return null; }
+  }
+  let body = null;
+  try { body = await r.json(); } catch (e) {}
+  if (!r.ok) throw new Error((body && body.error) || ('HTTP ' + r.status));
+  return body;
+}
+
+function closeModal() { $('modalBg').classList.remove('show'); }
+function showModal(html) { $('modalBox').innerHTML = html; $('modalBg').classList.add('show'); }
+$('modalBg').addEventListener('click', (e) => { if (e.target === $('modalBg')) closeModal(); });
+
+function switchTab(tab) {
+  CURRENT_TAB = tab;
+  document.querySelectorAll('nav button').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === tab));
+  ['overview','accounts','proxies','keys','history','settings'].forEach(t =>
+    $('tab-' + t).style.display = (t === tab ? '' : 'none'));
+  if (tab === 'overview') loadOverview();
+  if (tab === 'accounts') loadAccounts();
+  if (tab === 'proxies') loadProxies();
+  if (tab === 'keys') loadKeys();
+  if (tab === 'history') loadHistory();
+}
+
+async function logout() {
+  try { await fetch('/logout', {method: 'POST'}); } catch (e) {}
+  window.location = '/login';
+}
+
+function esc(s) { return String(s == null ? '' : s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ---------------- OVERVIEW ----------------
+async function loadOverview() {
+  try {
+    const h = await api('/health');
+    if (!h) return;
+    $('verLabel').textContent = 'v' + h.version;
+    $('statusLabel').textContent = h.status === 'ok' ? '● online' : '● ' + h.status;
+    const fb = h.freebuff || {};
+    const st = fb.account_status || {active: 0, cooldown: 0, disabled: 0};
+    const statusSub = [st.cooldown + ' cooldown', st.disabled + ' disabled']
+      .filter(Boolean).join(' · ');
+    $('overviewCards').innerHTML = `
+      ${card('Freebuff Accounts', fb.accounts, (fb.exhausted||0) + ' exhausted')}
+      ${card('Active Accounts', st.active, statusSub)}
+      ${card('Auth Keys', h.auth_keys, '')}
+      ${card('Circuit', (fb.health && fb.health.circuit_state) || '—',
+             (fb.health ? (fb.health.total_requests||0) + ' reqs' : ''))}
+    `;
+    const ch = fb.health || {};
+    $('circuitInfo').innerHTML =
+      `state: <b>${esc(ch.circuit_state)}</b> · requests: ${ch.total_requests||0} · ` +
+      `errors: ${ch.total_errors||0} (${ch.error_rate_pct||0}%) · ` +
+      `avg latency: ${ch.avg_latency_ms||0} ms` +
+      (ch.last_error_msg ? `<br>last error: <span style="color:var(--danger)">${esc(ch.last_error_msg)}</span>` : '');
+  } catch (e) { toast(e.message, true); }
+}
+function card(label, value, sub) {
+  return `<div class="card"><div class="label">${esc(label)}</div>
+    <div class="value">${esc(value)}</div><div class="sub">${esc(sub)}</div></div>`;
+}
+
+// ---------------- ACCOUNTS ----------------
+async function loadAccounts() {
+  try {
+    const d = await api('/fb/accounts');
+    if (!d) return;
+    const rows = (d.accounts || []).map(a => {
+      const q = a.quota_limit > 0 ? `${a.quota_recent} / ${a.quota_limit}` : '—';
+      const reset = a.quota_reset_at ? new Date(a.quota_reset_at * 1000).toLocaleString() : '—';
+      return `<tr>
+        <td class="mono">${esc(a.token)}</td>
+        <td>${esc(a.email || '—')}</td>
+        <td><span class="badge ${a.status}">${esc(a.status)}</span></td>
+        <td class="mono">${esc(q)}</td>
+        <td>${esc(reset)}</td>
+        <td><button class="btn danger" onclick="delAccount('${esc(a.token_full)}')">Delete</button></td>
+      </tr>`;
+    }).join('');
+    $('accountsBody').innerHTML = rows || `<tr><td colspan="6" class="empty">No accounts</td></tr>`;
+  } catch (e) { toast(e.message, true); }
+}
+
+function openAddToken() {
+  showModal(`<h3>Add Freebuff Token</h3>
+    <div class="field"><label>Auth token (UUID)</label>
+      <input id="m_token" placeholder="dc8e0cd5-..."></div>
+    <div class="modal-actions">
+      <button class="btn sec" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="submitAddToken()">Add</button>
+    </div>`);
+}
+async function submitAddToken() {
+  const token = $('m_token').value.trim();
+  if (!token) return toast('token required', true);
+  try {
+    const r = await api('/fb/import', {method:'POST', body: JSON.stringify({token})});
+    closeModal(); toast(r.added ? 'Token added' : 'Already present'); loadAccounts();
+  } catch (e) { toast(e.message, true); }
+}
+
+function openBulkImport() {
+  showModal(`<h3>Bulk Import Tokens</h3>
+    <div class="field"><label>One per line — <code>token|email|userid</code> (email/userid optional)</label>
+      <textarea id="m_raw" placeholder="uuid1|a@x.com|u1&#10;uuid2"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn sec" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="submitBulk()">Import</button>
+    </div>`);
+}
+async function submitBulk() {
+  const raw = $('m_raw').value.trim();
+  if (!raw) return toast('nothing to import', true);
+  try {
+    const r = await api('/fb/import/bulk', {method:'POST', body: JSON.stringify({raw})});
+    closeModal();
+    toast(`Added ${r.added}, failed ${r.failed}, total ${r.total}`, r.failed > 0);
+    loadAccounts();
+  } catch (e) { toast(e.message, true); }
+}
+
+function openAddOAuth() {
+  showModal(`<h3>Add via Login URL (device flow)</h3>
+    <div id="oauthStep">
+      <p style="color:var(--muted)">Generate a login URL, open it in your browser, complete
+      login, then this dialog auto-imports the token.</p>
+      <div class="modal-actions">
+        <button class="btn sec" onclick="closeModal()">Cancel</button>
+        <button class="btn" onclick="startOAuth()">Generate Login URL</button>
+      </div>
+    </div>`);
+}
+let _oauthPoll = null;
+async function startOAuth() {
+  try {
+    const r = await api('/fb/oauth/device/start', {method:'POST', body:'{}'});
+    $('oauthStep').innerHTML = `
+      <div class="field"><label>Open this URL in your browser</label>
+        <input readonly value="${esc(r.auth_url)}" onclick="this.select()"></div>
+      <p style="color:var(--muted)"><a href="${esc(r.auth_url)}" target="_blank">Open login page ↗</a>
+       — waiting for you to complete login…</p>
+      <div class="modal-actions"><button class="btn sec" onclick="stopOAuth()">Close</button></div>`;
+    const params = new URLSearchParams({
+      fingerprint_id: r.fingerprint_id, fingerprint_hash: r.fingerprint_hash,
+      expires_at: r.expires_at });
+    _oauthPoll = setInterval(async () => {
+      try {
+        const p = await api('/fb/oauth/device/poll?' + params.toString());
+        if (p.status === 'ready') { stopOAuth(); closeModal();
+          toast('OAuth account imported: ' + (p.email || p.user_id)); loadAccounts(); }
+        else if (p.status === 'error') { stopOAuth(); toast('OAuth error: ' + p.error, true); }
+      } catch (e) { /* keep polling */ }
+    }, 3000);
+  } catch (e) { toast(e.message, true); }
+}
+function stopOAuth() { if (_oauthPoll) { clearInterval(_oauthPoll); _oauthPoll = null; } }
+
+async function syncQuota() {
+  try { const r = await api('/fb/quota/sync', {method:'POST', body:'{}'});
+    toast('Quota synced: ' + r.synced); loadAccounts(); }
+  catch (e) { toast(e.message, true); }
+}
+async function delAccount(token) {
+  if (!confirm('Delete this account?')) return;
+  try { await api('/fb/accounts/' + encodeURIComponent(token), {method:'DELETE'});
+    toast('Deleted'); loadAccounts(); }
+  catch (e) { toast(e.message, true); }
+}
+
+// ---------------- PROXIES ----------------
+async function loadProxies() {
+  try {
+    const d = await api('/api/proxies');
+    if (!d) return;
+    const rows = (d.proxies || []).map(p => `<tr>
+      <td><input type="checkbox" class="proxy-select" value="${esc(p.id)}"></td>
+      <td>${esc(p.label || '—')}</td>
+      <td class="mono">${esc(p.protocol)}://${esc(p.username ? p.username + (p.password ? ':***' : '') + '@' : '')}${esc(p.host)}:${p.port}</td>
+      <td class="mono">${esc((p.upstreams || ['all']).join(', '))}</td>
+      <td>${p.fail_count || 0}</td>
+      <td><span class="badge ${p.enabled ? 'active' : 'disabled'}">${p.enabled ? 'enabled' : 'disabled'}</span></td>
+        <td>
+        <button class="btn sec" onclick="testProxy('${esc(p.id)}')">Test</button>
+        <button class="btn sec" onclick="toggleProxy('${esc(p.id)}', ${!p.enabled})">${p.enabled ? 'Disable' : 'Enable'}</button>
+        <button class="btn danger" onclick="deleteProxy('${esc(p.id)}')">Delete</button>
+      </td>
+    </tr>`).join('');
+    $('proxiesBody').innerHTML = rows || `<tr><td colspan="7" class="empty">No proxies</td></tr>`;
+    $('proxySelectAll').checked = false;
+  } catch (e) { toast(e.message, true); }
+}
+function toggleAllProxySelection(checked) {
+  document.querySelectorAll('.proxy-select').forEach(input => { input.checked = checked; });
+  const master = $('proxySelectAll');
+  if (master) master.checked = checked;
+}
+async function bulkDeleteProxies() {
+  const ids = Array.from(document.querySelectorAll('.proxy-select:checked')).map(input => input.value);
+  if (!ids.length) return toast('Select at least one proxy', true);
+  if (!confirm(`Delete ${ids.length} selected proxies?`)) return;
+  try {
+    const r = await api('/api/proxies/bulk-delete', {method:'POST', body:JSON.stringify({ids})});
+    toast(`Deleted ${r.deleted}, missing ${r.missing.length}`, r.missing.length > 0);
+    loadProxies();
+  } catch (e) { toast(e.message, true); }
+}
+
+function openAddProxy() {
+  showModal(`<h3>Add Global Proxy</h3>
+    <div class="field"><label>Label</label><input id="p_label" placeholder="residential-1"></div>
+    <div class="field"><label>Protocol</label><select id="p_protocol"><option>http</option><option>socks5</option></select></div>
+    <div class="field"><label>Host</label><input id="p_host" placeholder="127.0.0.1"></div>
+    <div class="field"><label>Port</label><input id="p_port" type="number" placeholder="8080"></div>
+    <div class="field"><label>Username (optional)</label><input id="p_user"></div>
+    <div class="field"><label>Password (optional)</label><input id="p_pass" type="password"></div>
+    <div class="field"><label>Upstream scope</label><select id="p_scope">
+      <option value="all">all (Freebuff)</option></select></div>
+    <div class="modal-actions"><button class="btn sec" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="submitAddProxy()">Add</button></div>`);
+}
+function openBulkProxyImport() {
+  showModal(`<h3>Bulk Import Proxies</h3>
+    <div class="field"><label>One proxy URL per line: http://user:pass@ip_proxy:port_proxy</label>
+      <textarea id="p_bulk" placeholder="http://user:pass@127.0.0.1:8080&#10;http://127.0.0.2:8080"></textarea></div>
+    <p style="color:var(--muted);font-size:12px">Each imported proxy uses the global <code>all</code> scope,
+      matching the Go implementation.</p>
+    <div class="modal-actions"><button class="btn sec" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="submitBulkProxyImport()">Import</button></div>`);
+}
+async function submitBulkProxyImport() {
+  const raw = $('p_bulk').value.trim();
+  if (!raw) return toast('nothing to import', true);
+  try {
+    const r = await api('/api/proxies/bulk', {method:'POST', body:JSON.stringify({raw})});
+    closeModal(); toast(`Added ${r.added}, failed ${r.failed}, total ${r.total}`, r.failed > 0);
+    loadProxies();
+  } catch (e) { toast(e.message, true); }
+}
+async function submitAddProxy() {
+  const payload = {label:$('p_label').value.trim(), protocol:$('p_protocol').value,
+    host:$('p_host').value.trim(), port:parseInt($('p_port').value || '0'),
+    username:$('p_user').value, password:$('p_pass').value,
+    upstreams:[$('p_scope').value]};
+  try { await api('/api/proxies', {method:'POST', body:JSON.stringify(payload)});
+    closeModal(); toast('Proxy added'); loadProxies(); }
+  catch (e) { toast(e.message, true); }
+}
+async function toggleProxy(id, enabled) {
+  try { await api('/api/proxies/' + encodeURIComponent(id) + '/toggle',
+    {method:'POST', body:JSON.stringify({enabled})}); loadProxies(); }
+  catch (e) { toast(e.message, true); }
+}
+async function testProxy(id) {
+  try { const r = await api('/api/proxies/' + encodeURIComponent(id) + '/test', {method:'POST', body:'{}'});
+    toast(r.ok ? 'Proxy OK (' + r.latency_ms + ' ms)' : ('Proxy failed: ' + (r.error || r.status_code)), !r.ok);
+    loadProxies(); }
+  catch (e) { toast(e.message, true); }
+}
+async function deleteProxy(id) {
+  if (!confirm('Delete this proxy?')) return;
+  try { await api('/api/proxies/' + encodeURIComponent(id), {method:'DELETE'});
+    toast('Deleted'); loadProxies(); }
+  catch (e) { toast(e.message, true); }
+}
+
+// ---------------- KEYS ----------------
+async function loadKeys() {
+  try {
+    const d = await api('/api/keys');
+    if (!d) return;
+    const rows = (d.keys || []).map(k => `<tr>
+      <td class="mono">${esc(k.key_masked)}</td>
+      <td>${esc(k.name || '—')}</td>
+      <td class="mono">${esc((k.allowed_models||[]).join(', ') || 'all')}</td>
+      <td>${k.rpm || '∞'}</td>
+      <td>${k.tokens_used}${k.token_quota ? ' / ' + k.token_quota : ''}</td>
+      <td>${k.requests}</td>
+      <td><span class="badge ${k.disabled ? 'disabled' : 'active'}">${k.disabled ? 'disabled' : 'active'}</span></td>
+      <td><button class="btn danger" onclick="delKey('${esc(k.key_masked)}')">Delete</button></td>
+    </tr>`).join('');
+    $('keysBody').innerHTML = rows || `<tr><td colspan="8" class="empty">No keys</td></tr>`;
+  } catch (e) { toast(e.message, true); }
+}
+function openCreateKey() {
+  showModal(`<h3>Create API Key</h3>
+    <div class="field"><label>Name</label><input id="k_name" placeholder="my-app"></div>
+    <div class="field"><label>Allowed models (comma-sep, blank = all)</label>
+      <input id="k_models" placeholder="fb/*"></div>
+    <div class="field"><label>RPM (0 = unlimited)</label><input id="k_rpm" type="number" value="0"></div>
+    <div class="field"><label>Token quota (0 = unlimited)</label><input id="k_quota" type="number" value="0"></div>
+    <div class="modal-actions">
+      <button class="btn sec" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="submitCreateKey()">Create</button>
+    </div>`);
+}
+async function submitCreateKey() {
+  const models = $('k_models').value.split(',').map(s => s.trim()).filter(Boolean);
+  const payload = {
+    name: $('k_name').value.trim(),
+    allowed_models: models, rpm: parseInt($('k_rpm').value || '0'),
+    token_quota: parseInt($('k_quota').value || '0') };
+  try {
+    const r = await api('/api/keys', {method:'POST', body: JSON.stringify(payload)});
+    showModal(`<h3>Key Created</h3>
+      <p style="color:var(--warn)">Copy this key now — it will not be shown again.</p>
+      <div class="field"><input readonly value="${esc(r.key)}" onclick="this.select()"></div>
+      <div class="modal-actions"><button class="btn" onclick="closeModal();loadKeys()">Done</button></div>`);
+  } catch (e) { toast(e.message, true); }
+}
+async function delKey(masked) {
+  if (!confirm('Delete key ' + masked + '?')) return;
+  try { await api('/api/keys/' + encodeURIComponent(masked), {method:'DELETE'});
+    toast('Deleted'); loadKeys(); }
+  catch (e) { toast(e.message, true); }
+}
+
+// ---------------- HISTORY ----------------
+async function loadHistory() {
+  try {
+    const stats = await api('/history?hours=24');
+    if (!stats) return;
+    const s = stats.stats || {};
+    $('historyCards').innerHTML = `
+      ${card('Requests (24h)', s.total_requests || 0, (s.total_errors||0) + ' errors')}
+      ${card('Error Rate', (s.error_rate_pct||0) + '%', '')}
+      ${card('Avg Latency', (s.avg_latency_ms||0) + ' ms', '')}
+      ${card('Total Tokens', s.total_tokens || 0,
+             (s.total_tokens_in||0) + ' in / ' + (s.total_tokens_out||0) + ' out')}
+    `;
+    const d = await api('/history/recent?limit=50');
+    const rows = (d.requests || []).map(r => `<tr>
+      <td>${esc(new Date(r.timestamp).toLocaleString())}</td>
+      <td class="mono">${esc(r.model)}</td>
+      <td><span class="badge ${r.status_code >= 400 ? 'disabled' : 'active'}">${r.status_code}</span></td>
+      <td>${r.latency_ms} ms</td>
+      <td>${(r.tokens_in||0)}/${(r.tokens_out||0)}</td>
+      <td>${esc(r.account_id || '—')}</td>
+      <td><button class="btn sec" onclick="showDetail('${esc(r.id)}')">View</button></td>
+    </tr>`).join('');
+    $('historyBody').innerHTML = rows || `<tr><td colspan="7" class="empty">No requests yet</td></tr>`;
+  } catch (e) { toast(e.message, true); }
+}
+async function showDetail(id) {
+  try {
+    const d = await api('/history/detail/' + encodeURIComponent(id));
+    showModal(`<h3>Request ${esc(id)}</h3>
+      <div class="field"><label>Request</label>
+        <pre class="detail">${esc(JSON.stringify(d.request_body, null, 2))}</pre></div>
+      <div class="field"><label>Response</label>
+        <pre class="detail">${esc(JSON.stringify(d.response_body, null, 2))}</pre></div>
+      <div class="modal-actions"><button class="btn sec" onclick="closeModal()">Close</button></div>`);
+  } catch (e) { toast(e.message, true); }
+}
+
+// ---------------- SETTINGS ----------------
+async function savePassword() {
+  const p1 = $('set_password').value;
+  const p2 = $('set_password2').value;
+  if (!p1) return toast('Enter a new password', true);
+  if (p1 !== p2) return toast('Passwords do not match', true);
+  if (p1.length < 4) return toast('Password must be at least 4 characters', true);
+  try {
+    await api('/api/dashboard/password', {method:'POST', body:JSON.stringify({password: p1})});
+    $('set_password').value = '';
+    $('set_password2').value = '';
+    toast('Dashboard password updated');
+  } catch (e) { toast(e.message, true); }
+}
+
+// init
+loadOverview();
+setInterval(() => { if (CURRENT_TAB === 'overview') loadOverview(); }, 15000);
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+*.db
+*.db-wal
+*.db-shm
+bootstrap-key.txt
+gateway-key.txt
+*.egg-info/
+.env
